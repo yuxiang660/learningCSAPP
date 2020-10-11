@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# hello
+hello
+!hello/
+*.i
+*.s
