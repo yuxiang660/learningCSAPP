@@ -31,7 +31,7 @@
 
 # 第三章 程序的机器级表示
 ## 程序编码
-* 机器级代码，例子：[code](./code/chapter3/01_mstore/Makefile)
+* 机器级代码，例子：[code](./code/chapter3/Makefile)
   * 汇编与目标代码
     * `objdump -d mstore.o`可以获得汇编代码与机器代码的对应关系
     * `gdb mstore.o` and `x/14xb multstore`，同样可获得汇编代码`multstore`对应的机器代码
@@ -39,4 +39,14 @@
     * `objdump -d main`可以反汇编出可执行文件的汇编代码，与目标文件的反汇编代码的不同之处在于：
       * 左边列出的地址不同
       * `callq`指令填上了调用函数`mult2`需要的地址
-
+  * 汇编文件`mstore.s`
+    * 以`.`开头的语句都是伪指令，可忽略
+## 汇编语法
+* 16个64位主寄存器
+* 操作数(汇编代码的数据源)指示符
+  * 立即数(immediate)，表示常数，如：`$0x1F`
+  * 寄存器(register)，表示某个寄存器的内容，`R[r]`
+  * 内存引用，`M[Addr]`
+* 数据传送指令
+  * 不支持内存到内存移动，这个要两条指令实现
+![move](./pictures/move.png)
