@@ -28,3 +28,11 @@
   * 定点表示法：二进制小数
   * 浮点表示法：符号，尾数，阶码
   ![float](./pictures/float.png)
+
+# 第三章 程序的机器级表示
+## 程序编码
+* 机器级代码
+  * 汇编与目标代码，例子：[code](./code/chapter3/01_mstore/Makefile)
+  * `objdump -d mstore.o`可以获得汇编代码与机器代码的对应关系
+  * `gdb mstore.o` and `x/14xb multstore`，同样可获得汇编代码`multstore`对应的机器代码
+
