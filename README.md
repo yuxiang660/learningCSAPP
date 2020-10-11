@@ -31,8 +31,12 @@
 
 # 第三章 程序的机器级表示
 ## 程序编码
-* 机器级代码
-  * 汇编与目标代码，例子：[code](./code/chapter3/01_mstore/Makefile)
-  * `objdump -d mstore.o`可以获得汇编代码与机器代码的对应关系
-  * `gdb mstore.o` and `x/14xb multstore`，同样可获得汇编代码`multstore`对应的机器代码
+* 机器级代码，例子：[code](./code/chapter3/01_mstore/Makefile)
+  * 汇编与目标代码
+    * `objdump -d mstore.o`可以获得汇编代码与机器代码的对应关系
+    * `gdb mstore.o` and `x/14xb multstore`，同样可获得汇编代码`multstore`对应的机器代码
+  * 反汇编可执行文件
+    * `objdump -d main`可以反汇编出可执行文件的汇编代码，与目标文件的反汇编代码的不同之处在于：
+      * 左边列出的地址不同
+      * `callq`指令填上了调用函数`mult2`需要的地址
 
