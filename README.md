@@ -58,6 +58,13 @@
 ![push_pop](./pictures/push_pop.png)
   * example for `pushq %rax` and `popq %rdx`
   ![push_pop_example](./pictures/push_pop_example.png)
+* 算术和逻辑操作<br>
+四组操作：
+  * 加载有效地址: 从内存读数据到寄存器(movq的变形)
+  * 一元操作
+  * 二元操作
+  * 移位
+  ![arithmetic](./pictures/arithmetic.png)
 
 ## 函数的调用过程
 * 运行时栈
