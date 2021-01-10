@@ -42,7 +42,8 @@
   * 汇编文件`mstore.s`
     * 以`.`开头的语句都是伪指令，可忽略
 ## 汇编语法
-* 16个64位主寄存器<br>
+* 16个64位主寄存器
+
 ![16_registers](./pictures/16_registers.png)
 * 操作数(汇编代码的数据源)指示符
   * 立即数(immediate)，表示常数，如：`$0x1F`
@@ -50,15 +51,18 @@
   * 内存引用，`M[Addr]`
 * 数据传送指令
   * 不支持内存到内存移动，这个要两条指令实现
+
 ![move](./pictures/move.png)
 ## 函数的调用过程
 * 运行时栈
   * 如果函数参数个数比较少，可以直接用寄存器存储，不需要入栈
+
 ![stack](./pictures/stack.png)
 
 # 第四章 处理器体系结构
 ## Y86-64指令集体系结构
 * 程序员可见的状态
+
 ![state](./pictures/state.png)
 ## 逻辑设计和硬件控制语言HCL
 * 组合电路的限制<br>
@@ -79,6 +83,7 @@
   * 写回(write back)，写回寄存器
   * 更新PC
 * SEQ硬件结构
+
 ![SEQ](./pictures/SEQ.png)
 ![SEQ2](./pictures/SEQ2.png)
   * 白色方框表示时钟寄存器
