@@ -43,8 +43,7 @@
     * 以`.`开头的语句都是伪指令，可忽略
 ## 汇编语法
 * 16个64位主寄存器
-
-![16_registers](./pictures/16_registers.png)
+  ![16_registers](./pictures/16_registers.png)
 * 操作数(汇编代码的数据源)指示符
   * 立即数(immediate)，表示常数，如：`$0x1F`
   * 寄存器(register)，表示某个寄存器的内容，`R[r]`
@@ -56,14 +55,12 @@
 ## 函数的调用过程
 * 运行时栈
   * 如果函数参数个数比较少，可以直接用寄存器存储，不需要入栈
-
-![stack](./pictures/stack.png)
+  ![stack](./pictures/stack.png)
 
 # 第四章 处理器体系结构
 ## Y86-64指令集体系结构
 * 程序员可见的状态
-
-![state](./pictures/state.png)
+  ![state](./pictures/state.png)
 ## 逻辑设计和硬件控制语言HCL
 * 组合电路的限制<br>
   * 每个逻辑门的输入必须连接到：1)一个系统输入（主输入），2)某个存储单元的输出，3)某个逻辑门的输出。
@@ -83,9 +80,8 @@
   * 写回(write back)，写回寄存器
   * 更新PC
 * SEQ硬件结构
-
-![SEQ](./pictures/SEQ.png)
-![SEQ2](./pictures/SEQ2.png)
+  ![SEQ](./pictures/SEQ.png)
+  ![SEQ2](./pictures/SEQ2.png)
   * 白色方框表示时钟寄存器
   * 蓝色方框表示硬件单元
   * 灰色圆角矩形表示控制逻辑块
