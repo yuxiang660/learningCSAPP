@@ -49,11 +49,16 @@
   * 寄存器(register)，表示某个寄存器的内容，`R[r]`
   * 内存引用，`M[Addr]`
   ![operands](./pictures/operands.png)
-* 数据传送指令
+* 数据传送指令<br>
+![move](./pictures/move.png)
   * 不支持内存到内存移动，这个要两条指令实现
-  ![move](./pictures/move.png)
   * examples
   ![mov_example](./pictures/mov_example.png)
+* 压入和弹出栈数据<br>
+![push_pop](./pictures/push_pop.png)
+  * example for `pushq %rax` and `popq %rdx`
+  ![push_pop_example](./pictures/push_pop_example.png)
+
 ## 函数的调用过程
 * 运行时栈
   * 如果函数参数个数比较少，可以直接用寄存器存储，不需要入栈
