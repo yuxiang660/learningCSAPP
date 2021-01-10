@@ -65,6 +65,8 @@
   * 二元操作
   * 移位
   ![arithmetic](./pictures/arithmetic.png)
+* 条件码<br>
+![condition](./pictures/condition.png)
 
 ## 函数的调用过程
 * 运行时栈
