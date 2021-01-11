@@ -11,8 +11,8 @@ cpp:
 	cpp sum.c sum.i
 
 cc1: cpp
-	gcc -S main.i -g -o main.s
-	gcc -S sum.i -g -o sum.s
+	/usr/lib/gcc/x86_64-linux-gnu/9/cc1 main.i -g -o main.s
+	/usr/lib/gcc/x86_64-linux-gnu/9/cc1 sum.i -g -o sum.s
 
 as: cc1
 	as -o main.o main.s
