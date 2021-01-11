@@ -229,6 +229,21 @@
     0000000000000000 l    d  .comment       0000000000000000 .comment
     0000000000000000 g     F .text  0000000000000045 sum
     ```
+  * 上述符号表各列的意义
+  ```
+  COLUMN ONE: the symbol's value
+  COLUMN TWO: a set of characters and spaces indicating the flag bits that are set on the symbol. There are seven groupings which are listed below:
+    group one: (l,g,,!) local, global, neither, both.
+    group two: (w,) weak or strong symbol.
+    group three: (C,) symbol denotes a constructor or an ordinary symbol.
+    group four: (W,) symbol is warning or normal symbol.
+    group five: (I,) indirect reference to another symbol or normal symbol.
+    group six: (d,D,) debugging symbol, dynamic symbol or normal symbol.
+    group seven: (F,f,O,) symbol is the name of function, file, object or normal symbol.
+  COLUMN THREE: the section in which the symbol lives, ABS means not associated with a certain section
+  COLUMN FOUR: the symbol's size or alignment.
+  COLUMN FIVE: the symbol's name.
+  ```
 * .rel.text
   * 一个.text节中位置的列表，当链接器把这个目标文件和其他文件组合时，需要修改这些位置。一般而言，任何调用外部函数或者引用全局变量的指令都需要修改。另一方面，调用本地函数的指令则不需要修改。注意，可执行目标文件中并不需要重定位信息，因此通常省略。
 * rel.data
@@ -237,3 +252,68 @@
   * 一个调式符号表，其条目是程序中定义的局部变量和类型定义，程序中定义和引用的全局变量。
 * .strtab
   * 一个字符串表，其内容包括.symtab和.debug节中的符号表，以及节头部中的节名字。字符串表就是以null结尾的字符串的序列。
+
+# 符号和符号表
+三种不同的符号：
+* 由此模块定义并能被其他模块引用的全局符号，如：非静态的C函数和全局变量
+* 由其他模块定义并被此模块引用的全局符号(外部符号)
+* 只被此模块定义和引用的局部符号，对应于带`static`属性的C函数和全局变量。
+
+**注意**：.symtab中的符号表不包含对应于本地非静态程序变量的任何符号，这些符号在运行时在栈中被管理，链接器对此类符号不感兴趣。
+
+## static属性
+```c
+int f()
+{
+  static int x = 0;
+  return x;
+}
+
+int g()
+{
+  static int x = 1;
+  return x;
+}
+```
+编译器在.data或.bss中为每个定义分配空间，并在符号表中创建一个唯一的名字。如上面的例子中，编译器会向汇编器输出两个不同名字的局部链接器符号，可以用`x.1`表示函数f中的定义，而用`x.2`表示函数g中的定义。
+
+## 符号的意义
+每个符号都被分配到目标文件的某个节，由`section`字段表示(如：.text等)。有三个特殊的伪节*(pseudosection)，它们在节头部表中没有条目：
+* ABS: 代表不该被重定位的符号
+* UNDEF：代表未定义的符号，也就是在本目标模块中引用，但是却在其他地方定义的符号
+* COMMON：表示还未被分配位置的未初始化的数据目标。对于COMMON符号，value字段给出对齐要求，而size给出最小的大小
+### `readelf` 例子
+`readelf -a main.o`命令可得到下面三行：
+```
+13: 0000000000000000     8 OBJECT  GLOBAL DEFAULT    3 array
+14: 0000000000000000    35 FUNC    GLOBAL DEFAULT    1 main
+16: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND sum
+```
+`objdump -t main.o`命令可得到如下三行：
+```
+0000000000000000 g     O .data  0000000000000008 array
+0000000000000000 g     F .text  0000000000000023 main
+0000000000000000         *UND*  0000000000000000 sum
+```
+* main条目<br>
+它是一个位于`.text`节中偏移量为0(即value值)处的35字节函数。
+* array条目<br>
+它是一个位于`.data`节中偏移量为0处的8字节目标。
+* sum条目<br>
+它是一个对外部符号`sum`的引用。READELF用一个整数索引来标识每个节。 Ndx=1表示.text节，而Ndx=3表示.data节。
+
+## 符号解析
+链接器解析符号引用的方法是将每个引用与它输入的可重定位目标文件的符号表中的一个确定的符号定义关联起来。
+* 全局符号的引用解析<br>
+当编译器遇到一个不是在当前模块中定义的符号(变量或函数名)时，会假设该符号是在其他某个模块中定义的，生成一个链接器符号表条目，并把它交给链接器处理。如果链接器在它的任何输入模块中都找不到这个被引用符号的定义，就输出一条错误信息并终止。
+
+### 链接器如何解析多重定义的全局符号
+在编译时，编译器向汇编器输出每个全局符号，或者是强(strong)或者是弱(weak)，而汇编器把这个信息隐含地编码在可重定位目标文件的符号表里。
+* 函数和已初始化的全局变量是强符号
+* 未初始化的全局变量是弱符号
+
+Linux链接器使用下面的规则来处理多重定义的符号名，可参考[例子](./code/chapter7/symbol_conflict)：
+* 规则1：不允许有多个同名的强符号
+* 规则2：如果有一个强符号和多个弱符号同名，那么选择强符号
+* 规则3：如果有多个弱符号同名，那么从这些弱符号中任意选择一个
+
