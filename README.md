@@ -329,5 +329,117 @@ Linux链接器使用下面的规则来处理多重定义的符号名，可参考
 从左到有解析，一般把静态库放到后面。有时候会出现需要写两遍静态库的情况, 如, `libx.a`和`liby.a`相互调用的情况：
 `gcc foo.c libx.a liby.a libx.a`
 
+## 重定位
+重定位的目的是：为每个符号分配运行时地址。由两步组成：
+* 重定位节和符号定义
+  * 将所有输入模块的相同类型的节合并为同一类型的新的聚合节
+  * 将运行时内存地址赋给每个节以及每个符号
+* 重定位节中的符号引用
+  * 修改代码节和数据节中对每个符号的引用，使得它们指向正确的运行时地址
 
+### 重定位条目
+由于汇编器无法确定外部引用最终在内存中的位置，所以它就会生成一个重定位条目，告诉链接器在将目标文件合并成可执行文件时如何修改这个引用。重定位条目会告诉链接器需要修改的引用的信息。
+* .rel.text: 存放代码的重定位条目
+* .rel.data：存放已初始化数据的重定位条目
+
+### 重定位符号引用
+* [main.c](./code/chapter7/link/main.c)的重定位前的汇编代码(`objdump -d main.o`)
+```
+0000000000000000 <main>:
+   0:   55                      push   %rbp
+   1:   48 89 e5                mov    %rsp,%rbp
+   4:   48 83 ec 10             sub    $0x10,%rsp
+   8:   be 02 00 00 00          mov    $0x2,%esi
+   d:   48 8d 3d 00 00 00 00    lea    0x0(%rip),%rdi        # 14 <main+0x14>
+                        10: R_X86_64_PC32       array-0x4
+  14:   e8 00 00 00 00          callq  19 <main+0x19>
+                        15: R_X86_64_PLT32      sum-0x4
+  19:   89 45 fc                mov    %eax,-0x4(%rbp)
+  1c:   b8 00 00 00 00          mov    $0x0,%eax
+  21:   c9                      leaveq 
+  22:   c3                      retq 
+```
+* [main.c](./code/chapter7/link/main.c)的重定位后的汇编代码(`objdump -D main`)
+```
+0000000000401000 <main>:
+  401000:       55                      push   %rbp
+  401001:       48 89 e5                mov    %rsp,%rbp
+  401004:       48 83 ec 10             sub    $0x10,%rsp
+  401008:       be 02 00 00 00          mov    $0x2,%esi
+  40100d:       48 8d 3d ec 2f 00 00    lea    0x2fec(%rip),%rdi        # 404000 <array>
+  401014:       e8 0a 00 00 00          callq  401023 <sum>
+  401019:       89 45 fc                mov    %eax,-0x4(%rbp)
+  40101c:       b8 00 00 00 00          mov    $0x0,%eax
+  401021:       c9                      leaveq 
+  401022:       c3                      retq
+0000000000401023 <sum>:
+  401023:       55                      push   %rbp
+  ...
+0000000000404000 <array>:
+  404000:       01 00                   add    %eax,(%rax)
+  ...
+```
+
+## 可执行目标文件
+![ELF_Format](./pictures/ELF_Format.png)
+* 可执行目标文件 ELF header (`readelf -h main`)
+```
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x401000
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          13872 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         5
+  Size of section headers:           64 (bytes)
+  Number of section headers:         13
+  Section header string table index: 12
+```
+* 可重定位目标文件 ELF header (`readelf -h main.o`)
+```
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              REL (Relocatable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x0
+  Start of program headers:          0 (bytes into file)
+  Start of section headers:          1744 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           0 (bytes)
+  Number of program headers:         0
+  Size of section headers:           64 (bytes)
+  Number of section headers:         20
+  Section header string table index: 19
+```
+* 可执行目标文件相对于可重定位目标文件的不同之处
+  * .init节，定义了一个小函数，叫做_init，程序的初始化代码会调用它。
+  * 因为可执行文件是完全链接的(已被重定位)，所以它不再需要.rel节。
+
+## 加载可执行目标文件
+![prog_mem](./pictures/prog_mem.png)
+如上图所示，每个Linux程序都有一个运行时内存映像，程序运行过程如下：
+* 加载器运行，创建如上图所示的内存映像
+* 加载器复制可执行文件的内容到代码段和数据段
+* 加载器跳转到程序的入口点：`_start`函数地址
+* `_start`函数调用系统启动函数`__libc_start_main`，该函数定义在libc.so中
+* `__libc_start_main`初始化执行环境，并调用用户层的`main`函数
+
+## 动态链接共享库
 
