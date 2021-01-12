@@ -6,7 +6,7 @@ vec:
 
 target: vec
 	gcc -c main.c
-	gcc -static -o main main.o -L. ./libvec.a
+	gcc -static -o main main.o ./libvec.a
 
 # the rule to link static lib is to find unresolved symbols from left to right, then throw away
 error_target: vec
