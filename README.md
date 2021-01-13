@@ -501,3 +501,10 @@ Linux允许你截获对共享库函数的调用，取而代之执行自己的代
   * 在编译时添加`-Wl,,--wrap,xxxFunc`编译选项，修改打桩函数的symbol，加上`__wrap`和`__real`前缀
 * 运行时打桩
   * 利用`LD_PRELOAD`环境变量(以空格或分号分隔)影响动态链接库的运行。动态链接器(LD-LINUX.SO)会先搜索LD_PRELOAD库，然后才搜索任何其他的库。
+
+## 处理目标文件的工具
+常用命令
+* 获取动态库中某个函数的symbol
+  * `readelf --dyn-syms -W xx.so | grep xxxFunc`
+
+
