@@ -14,6 +14,7 @@
       - [Y86-64指令](#y86-64指令)
       - [指令编码](#指令编码)
       - [Y86-64异常](#y86-64异常)
+      - [一个汇编程序的组成](#一个汇编程序的组成)
    - [逻辑设计和硬件控制语言HCL](#逻辑设计和硬件控制语言hcl)
    - [Y86-64的顺序实现SEQ](#y86-64的顺序实现seq)
    - [流水线的通用原理](#流水线的通用原理)
@@ -216,6 +217,53 @@
 ![Y86-64_exception](pictures/Y86-64_exception.png)
 * 比较完美的设计中，当发生异常时，处理器会调用一个异常处理程序
   * 例如，中止程序或者调用一个用户自定义的信号处理程序(signal handler)
+
+### 一个汇编程序的组成
+* 一个简单的汇编程序一般由以下几步组成：
+  * 最开始先设置栈
+    ```bash
+    # Execution begins at address 0
+        .pos 0
+        irmovq stack, %rsp  # Set up stack pointer %rsp with immediate number
+        call main           # Execute main program
+        halt                # Terminate program
+    ```
+  * 进入主函数main后，开始初始化数据
+    ```bash
+    # Array of 4 elements
+      .align 8              # 汇编伪指令
+    array:
+      .quad ...
+    main:
+      irmovq array, %rdi    # initialize %rdi register for data0
+      irmovq $4, %rsi       # initialize %rsi register for data1
+      call sum              # call sum
+      ret
+    ```
+  * 准备好数据后，进入处理函数执行
+    ```bash
+    # long sum(long* start, long count)
+    # start in %rdi, count in %rsi
+    sum:
+      irmovq $8,%r8         # local data constant 8
+      irmovq $1,%r9         # local data constant 1
+      xorq %rax,%rax        # %rax is for sum, sum = 0
+      andq %rsi,%rsi        # %rsi is count, if count == 0, exit the function. CC is set here
+    loop:
+      mrmovq (%rdi),%r10    # move data from register %rdi (start) to %r10 register
+      addq %r10,%rax        # add to result sum
+      addq %r8,%rdi         # start++
+      subq %r9,%rsi         # count-- and set CC
+    test:
+      jne loop              # stop when 0
+      ret
+    ```
+  * 最后指定stack位置
+    ```bash
+    # Stack starts here and grows to lower addresses
+      .pos 0x200
+    stack:
+    ```
 
 ## 逻辑设计和硬件控制语言HCL
 * 组合电路的限制<br>
