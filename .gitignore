@@ -44,3 +44,4 @@ core
 *.yo
 yas-grammar.c
 yas
+.vscode/
