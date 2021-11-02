@@ -39,3 +39,7 @@ hello
 main
 core
 *.symbols
+
+# Y86-64
+*.yo
+yas-grammar.c
