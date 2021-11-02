@@ -43,3 +43,4 @@ core
 # Y86-64
 *.yo
 yas-grammar.c
+yas
