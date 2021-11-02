@@ -1,3 +1,11 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+int yylex();
+#ifdef __cplusplus
+}
+#endif
+
 void save_line(char *);
 void finish_line();
 void add_reg(char *);
@@ -5,7 +13,7 @@ void add_ident(char *);
 void add_instr(char *);
 void add_punct(char);
 void add_num(long long);
-void fail(char *msg);
+void fail(const char *msg);
 unsigned long long atollh(const char *);
 
 

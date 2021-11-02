@@ -48,8 +48,8 @@ typedef struct {
 
 /* Information about current input line */
 token_rec tokens[TOK_PER_LINE];
-int lineno;  /* What line number am I processing? */
-int bytepos; /* What byte address is the current instruction */
+//int lineno;  /* What line number am I processing? */
+//int bytepos; /* What byte address is the current instruction */
 int tcount;  /* How many tokens are there in this line? */
 int tpos;    /* What token am I currently processing */
 
@@ -189,7 +189,7 @@ void print_code(FILE *out, int pos)
     }
 }
 
-void fail(char *message)
+void fail(const char *message)
 {
     if (!error_mode) {
     fprintf(stderr, "Error on line %d: %s\n", lineno, message);
@@ -536,7 +536,6 @@ int yywrap()
 }
 
 extern FILE *yyin;
-int yylex();
 
 static void usage(char *pname)
 {

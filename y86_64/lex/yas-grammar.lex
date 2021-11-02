@@ -1,5 +1,9 @@
 /* Grammar for Y86-64 Assembler */
- #include "yas.h"
+%option noyywrap
+
+%{
+#include "yas.h"
+%}
 
 Instr         rrmovq|cmovle|cmovl|cmove|cmovne|cmovge|cmovg|rmmovq|mrmovq|irmovq|addq|subq|andq|xorq|jmp|jle|jl|je|jne|jge|jg|call|ret|pushq|popq|"."byte|"."word|"."long|"."quad|"."pos|"."align|halt|nop|iaddq
 Letter        [a-zA-Z]
@@ -17,7 +21,7 @@ Reg           %rax|%rcx|%rdx|%rbx|%rsi|%rdi|%rsp|%rbp|%r8|%r9|%r10|%r11|%r12|%r1
 
 ^{Char}*{Return}*{Newline}      { save_line(yytext); REJECT;} /* Snarf input line */
 #{Char}*{Return}*{Newline}      {finish_line(); lineno++;}
-"//"{Char}*{Return}*{Newline}     {finish_line(); lineno++;}
+"//"{Char}*{Return}*{Newline}   {finish_line(); lineno++;}
 "/*"{Char}*{Return}*{Newline}   {finish_line(); lineno++;}
 {Blank}*{Return}*{Newline}      {finish_line(); lineno++;}
 
@@ -33,7 +37,3 @@ Reg           %rax|%rcx|%rdx|%rbx|%rsi|%rdi|%rsp|%rbp|%r8|%r9|%r10|%r11|%r12|%r1
 <ERR>{Char}*{Newline} {fail("Invalid line"); lineno++; BEGIN 0;}
 %%
 
-unsigned int atoh(const char *s)
-{
-    return(strtoul(s, NULL, 16));
-}

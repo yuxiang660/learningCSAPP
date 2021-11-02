@@ -1,4 +1,4 @@
-CC=gcc
+CC=g++
 CFLAGS=-Wall -O1 -g
 LCFLAGS=-O1
 LEX = flex

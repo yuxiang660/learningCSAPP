@@ -12,7 +12,7 @@ extern int gui_mode;
 #define BPL 32
 
 struct {
-    char *name;
+    const char *name;
     int id;
 } reg_table[REG_ERR+1] = 
 {
@@ -45,7 +45,7 @@ reg_id_t find_register(char *name)
     return REG_ERR;
 }
 
-char *reg_name(reg_id_t id)
+const char *reg_name(reg_id_t id)
 {
     if (id >= 0 && id < REG_NONE)
 	return reg_table[id].name;
@@ -116,7 +116,7 @@ instr_ptr find_instr(char *name)
 }
 
 /* Return name of instruction given its encoding */
-char *iname(int instr) {
+const char *iname(int instr) {
     int i;
     for (i = 0; instruction_set[i].name; i++) {
 	if (instr == instruction_set[i].code)
@@ -505,7 +505,7 @@ cc_t compute_cc(alu_t op, word_t argA, word_t argB)
     
 }
 
-char *cc_names[8] = {
+const char *cc_names[8] = {
     "Z=0 S=0 O=0",
     "Z=0 S=0 O=1",
     "Z=0 S=1 O=0",
@@ -515,7 +515,7 @@ char *cc_names[8] = {
     "Z=1 S=1 O=0",
     "Z=1 S=1 O=1"};
 
-char *cc_name(cc_t c)
+const char *cc_name(cc_t c)
 {
     int ci = c;
     if (ci < 0 || ci > 7)
@@ -526,9 +526,9 @@ char *cc_name(cc_t c)
 
 /* Status types */
 
-char *stat_names[] = { "BUB", "AOK", "HLT", "ADR", "INS", "PIP" };
+const char *stat_names[] = { "BUB", "AOK", "HLT", "ADR", "INS", "PIP" };
 
-char *stat_name(stat_t e)
+const char *stat_name(stat_t e)
 {
     if (e < 0 || e > STAT_PIP)
 	return "Invalid Status";

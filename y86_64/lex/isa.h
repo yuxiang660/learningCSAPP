@@ -14,15 +14,23 @@
 /**************** Registers *************************/
 
 /* REG_NONE is a special one to indicate no register */
-typedef enum { REG_RAX, REG_RCX, REG_RDX, REG_RBX,
+enum
+{
+  REG_RAX, REG_RCX, REG_RDX, REG_RBX,
 	       REG_RSP, REG_RBP, REG_RSI, REG_RDI,
 	       REG_R8,  REG_R9,  REG_R10, REG_R11,
-	       REG_R12, REG_R13, REG_R14,  REG_NONE=0xF, REG_ERR } reg_id_t;
+	       REG_R12, REG_R13, REG_R14,  REG_NONE=0xF, REG_ERR
+};
+typedef int reg_id_t;
+// typedef enum { REG_RAX, REG_RCX, REG_RDX, REG_RBX,
+// 	       REG_RSP, REG_RBP, REG_RSI, REG_RDI,
+// 	       REG_R8,  REG_R9,  REG_R10, REG_R11,
+// 	       REG_R12, REG_R13, REG_R14,  REG_NONE=0xF, REG_ERR } reg_id_t;
 
 /* Find register ID given its name */
 reg_id_t find_register(char *name);
 /* Return name of register given its ID */
-char *reg_name(reg_id_t id);
+const char *reg_name(reg_id_t id);
 
 /**************** Instruction Encoding **************/
 
@@ -30,13 +38,14 @@ char *reg_name(reg_id_t id);
 typedef enum { R_ARG, M_ARG, I_ARG, NO_ARG } arg_t;
 
 /* Different instruction types */
-typedef enum { I_HALT, I_NOP, I_RRMOVQ, I_IRMOVQ, I_RMMOVQ, I_MRMOVQ,
+enum { I_HALT, I_NOP, I_RRMOVQ, I_IRMOVQ, I_RMMOVQ, I_MRMOVQ,
 	       I_ALU, I_JMP, I_CALL, I_RET, I_PUSHQ, I_POPQ,
-	       I_IADDQ, I_POP2 } itype_t;
+	       I_IADDQ, I_POP2 };
+typedef int itype_t;
 
 /* Different ALU operations */
-typedef enum { A_ADD, A_SUB, A_AND, A_XOR, A_NONE } alu_t;
-
+enum { A_ADD, A_SUB, A_AND, A_XOR, A_NONE };
+typedef int alu_t;
 /* Default function code */
 typedef enum { F_NONE } fun_t;
 
@@ -44,7 +53,8 @@ typedef enum { F_NONE } fun_t;
 char op_name(alu_t op);
 
 /* Different Jump conditions */
-typedef enum { C_YES, C_LE, C_L, C_E, C_NE, C_GE, C_G } cond_t;
+enum { C_YES, C_LE, C_L, C_E, C_NE, C_GE, C_G };
+typedef int cond_t;
 
 /* Pack itype and function into single byte */
 #define HPACK(hi,lo) ((((hi)&0xF)<<4)|((lo)&0xF))
@@ -60,14 +70,15 @@ typedef enum { C_YES, C_LE, C_L, C_E, C_NE, C_GE, C_G } cond_t;
 #define GET_FUN(instr) LO4(instr)
 
 /* Return name of instruction given it's byte encoding */
-char *iname(int instr);
+const char *iname(int instr);
 
 /**************** Truth Values **************/
-typedef enum { FALSE, TRUE } bool_t;
+enum { FALSE, TRUE };
+typedef int bool_t;
 
 /* Table used to encode information about instructions */
 typedef struct {
-  char *name;
+  const char *name;
   unsigned char code; /* Byte code for instruction+op */
   int bytes;
   arg_t arg1;
@@ -170,7 +181,7 @@ typedef unsigned char cc_t;
 cc_t compute_cc(alu_t op, word_t arg1, word_t arg2);
 
 /* Generated printed form of condition code */
-char *cc_name(cc_t c);
+const char *cc_name(cc_t c);
 
 /* **************** Status types *******************/
 
@@ -178,7 +189,7 @@ typedef enum
  {STAT_BUB, STAT_AOK, STAT_HLT, STAT_ADR, STAT_INS, STAT_PIP } stat_t;
 
 /* Describe Status */
-char *stat_name(stat_t e);
+const char *stat_name(stat_t e);
 
 /* **************** ISA level implementation *********/
 
