@@ -18,6 +18,8 @@
     - [逻辑设计和硬件控制语言HCL](#逻辑设计和硬件控制语言hcl)
     - [Y86-64的顺序实现SEQ](#y86-64的顺序实现seq)
         - [SEQ硬件结构](#seq硬件结构)
+        - [SEQ时序](#seq时序)
+        - [SEQ阶段的实现](#seq阶段的实现)
     - [流水线的通用原理](#流水线的通用原理)
     - [Y86-64的流水线实现SEQ+](#y86-64的流水线实现seq)
 - [第五章 优化程序性能](#第五章-优化程序性能)
@@ -332,18 +334,124 @@
 
 ![SEQ2](./pictures/SEQ2.png)
 * 白色方框表示时钟寄存器
+    * PC是SEQ中唯一的时钟寄存器，由**时钟信号**控制寄存器加载输入值
 * 蓝色方框表示硬件单元
 * 灰色圆角矩形表示控制逻辑块
+    * 用来从一组信号源中进行选择，或者用来计算一些布尔函数
 * 白色圆圈表示线路的名称
+* 线的粗细代表了上面传输数据的宽度
+    * 单个位的连接用虚线来表示
 
-SEQ时序
-* SEQ实现包括
-    * 组合逻辑
-    * 两种存储设备
-        * 时钟寄存器（程序计数器和条件码寄存器）
-        * 随机访问存储器（寄存器文件，指令内存，数据内存）
+### SEQ时序
+SEQ实现包括
+* 组合逻辑
+* 两种存储设备
+    * 时钟寄存器（程序计数器和条件码寄存器）
+    * 随机访问存储器（寄存器文件，指令内存，数据内存）
+        * 指令内存只用来读指令，因此我们可以将这个单元看成是组合逻辑
+
+组合逻辑不需要任何时序或控制--只要输入变化了，值就通过逻辑门网络传播。我们也将读随机访问存储器看成和组合逻辑一样的操作，根据地址输入产生输出字。那么我们由四个硬件单元需要对它们的时序进行明确的控制。这些单元通过一个时钟信号控制，它触发将新值装载到寄存器以及将值写到随机访问存储器。
+* 程序计数器
+    * 每个时钟周期，都会装载新的指令地址
+* 条件码寄存器
+    * 只有在执行整数运算指令时，才会装载条件码寄存器
+* 数据内存
+    * 只有在执行`rmmovq`, `pushq`, `call`指令时，才会写数据内存
+* 寄存器文件
+    * 两个写端口运行每个时钟周期更新两个程序寄存器，我们可以用特殊的寄存器ID0xF作为端口地址，来表明此端口不应该执行写操作
+
+要控制处理器中活动的时序，只需要寄存器和内存的时钟控制。即使所有的状态更新实际上同时发生，也能保证赋值顺序执行的效果。原因时我们遵循以下原则组织计算：
 * 原则：从不回读
-    * 处理器从来不需要为了完成一条指令的执行而去读由该指令更新了的状态
+    * 处理器从来不需要为了完成一条指令的执行而去读由该指令更新了的状态，这样保证了在一个指令中不会出来前后依赖
+    * 例如，有些指令(整数运算)会设置条件码，有些指令(跳转指令)会读取条件码，但没有指令必须既设置又读取条件码
+
+![seq_example](pictures/seq_example.png)
+* 在周期3开始的时候，状态单元保持的时第二条`irmovq`指令更新过的状态(上图1中的浅灰色)
+* 在周期3的末尾，组合逻辑位条件码产生了新的值(000)，程序寄存器%rbx的更新值，以及程序计数器是新值(0x016)，但是状态单元还未更新
+* 当时钟上升周期4时，会更新程序计数器、寄存器文件和条件码寄存器(上图3中的蓝色)
+
+### SEQ阶段的实现
+本节会设计实现SEQ所需要的控制逻辑块的HCL描述。
+* 取指阶段<br>
+    ![seq_1](pictures/seq_1.png)
+    * 以PC作为第一个字节的地址，从内存读出10个字节。第一个字节被解释成：icode+ifun
+        * need_regids: 这个指令是否包括一个寄存器指示符字节
+            * HCL描述：`bool need_regids = icode in { IRRMOVQ, IOPQ, IPUSHQ, IPOPQ, IIRMOVQ, IRMMOVQ, IMRMOVQ};`
+        * need_valC: 这个指令是否包括一个常数字
+    * "Align"硬件单元会处理剩下9个字节，将它们放入寄存器字段和常数字中
+        * 当need_regids为1时，字节1被分开装入寄存器指示符rA和rB中。否则，这个字段会被设为0xF(RNONE)
+        * 根据信号need_regids的值，选择字节1~8或2~9产生valC
+    * PC增加器根据PC值p，need_regids值r以及need_valC值i，增加其产生值`p+1+r+8i`
+* 译码和写回阶段<br>
+    ![seq_2](pictures/seq_2.png)
+    * 这两个阶段都要访问寄存器文件
+    * 寄存器ID srcA表明应该读哪个寄存器以产生valA
+        * srcA的HCL描述，其中RRSP是%rsp的寄存器ID
+        ```sh
+        word srcA = [
+            icode in { IRRMOVQ, IRMMOVQ, IOPQ, IPUSHQ } : rA;
+            icode in { IPOPQ, IRET } : RRSP;
+            1 ： RNONE； # Don't need register
+        ];
+        ```
+    * 寄存器ID dstE表明写端口E的目的寄存器，计算出来的valE将放在那里
+        * dstE的HCL描述
+        ```sh
+        # WARNING: Conditional move not implemented correctly here
+        word dstE = [
+            icode in { IRRMOVQ } : rB;
+            icode in { IIRMOVQ, IOPQ } : rB;
+            icode in { IPUSHQ, IPOPQ, ICALL, IRET } : RRSP;
+            1 : RNONE;
+        ];
+        ```
+* 执行阶段<br>
+    ![seq_3](pictures/seq_3.png)
+    * alufun信号可以是：ADD, SUBTRACT, AND或EXCLUSIVE-OR，其HCL描述如下：
+    ```sh
+    word alufun = [
+        icode == IOPQ : ifun;
+        1 : ALUADD;
+    ];
+    ```
+    * aluA的值可以是valA, valC, 或者是-8或+8，其HCL描述如下：
+    ```sh
+    word aluA = [
+        icode in { IRRMOVQ, IOPQ } : valA;
+        icode in { IIRMOVQ, IRMMOVQ, IMRMOVQ } : valC;
+        icode in { ICALL, IPUSHQ } : -8;
+        icode in { IRET, IPOPQ } : 8;
+    ];
+    ```
+    * ALU每次运行都会产生三个与条件码相关的信号--零、符号和溢出
+        * `bool set_cc = icode in { IOPQ };`
+    * cond硬件单元会根据条件码和功能码来确定是否进行条件分支或者条件数据传送
+* 访存阶段<br>
+    ![seq_4](pictures/seq_4.png)
+    * 此阶段的任务就是读或者写数据内存
+    * 两个控制块产生内存地址和内存输入数据
+        * mem_addr的HCL描述
+        ```sh
+        word mem_addr = [
+            icode in { IRMMOVQ, IPUSHQ, ICALL, IMRMOVQ } : valE;
+            icode in { IPOPQ, IRET } : valA;
+        ];
+        ```
+    * 另外两个块产生表明应该执行读操作还是写操作的控制信号。当执行读操作时，数据内存产生值valM
+        * mem_read的HCL描述: `bool mem_read = icode in { IMRMOVQ, IPOPQ, IRET };`
+* 更新PC阶段<br>
+    ![seq_5](pictures/seq_5.png)
+    * 新的PC可能是valC, valM或valP
+    ```sh
+    word new_pc = [
+        icode == ICALL : valC;
+        # Taken branch
+        icode == IJXX && Cnd : valC;
+        icode == IRET : valM;
+        1 : valP;
+    ];
+    ```
+
 
 ## 流水线的通用原理
 重要特性：提高系统的吞吐量(throughput)，也就是单位时间内完成任务的总数，不过也会轻微增加延时(latency)，也就是完成一个任务所需要的时间。
